@@ -1,0 +1,446 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Polite Chat Room</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.socket.io/4.0.0/socket.io.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        .chat-container {
+            height: calc(100vh - 200px);
+        }
+        .message-bubble {
+            animation: fadeIn 0.3s ease-in;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .typing-indicator {
+            display: inline-flex;
+            align-items: center;
+            padding: 8px 12px;
+            background: #e5e7eb;
+            border-radius: 18px;
+        }
+        .typing-dot {
+            width: 8px;
+            height: 8px;
+            margin: 0 2px;
+            background: #6b7280;
+            border-radius: 50%;
+            animation: typing 1.4s infinite;
+        }
+        .typing-dot:nth-child(2) { animation-delay: 0.2s; }
+        .typing-dot:nth-child(3) { animation-delay: 0.4s; }
+        @keyframes typing {
+            0%, 60%, 100% { transform: translateY(0); }
+            30% { transform: translateY(-10px); }
+        }
+        .hate-detected {
+            border-left: 4px solid #ef4444;
+            background: linear-gradient(to right, rgba(239, 68, 68, 0.1), transparent);
+        }
+        .converted-message {
+            border-left: 4px solid #10b981;
+            background: linear-gradient(to right, rgba(16, 185, 129, 0.1), transparent);
+        }
+        .user-list-item {
+            transition: all 0.2s ease;
+        }
+        .user-list-item:hover {
+            background: rgba(99, 102, 241, 0.1);
+        }
+        .conversion-option {
+            transition: all 0.2s ease;
+            cursor: pointer;
+        }
+        .conversion-option:hover {
+            background: rgba(99, 102, 241, 0.1);
+            transform: translateY(-2px);
+        }
+        .conversion-option.selected {
+            background: rgba(99, 102, 241, 0.2);
+            border-color: #6366f1;
+        }
+    </style>
+</head>
+<body class="bg-gray-50">
+    <!-- Header -->
+    <header class="bg-gradient-to-r from-indigo-600 to-purple-600 text-white shadow-lg">
+        <div class="container mx-auto px-4 py-4">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center">
+                    <i class="fas fa-robot text-2xl mr-3"></i>
+                    <div>
+                        <h1 class="text-xl font-bold">AI Polite Chat Room</h1>
+                        <p class="text-indigo-100 text-sm">Real-time hate speech detection & conversion</p>
+                    </div>
+                </div>
+                <div class="flex items-center space-x-4">
+                    <span id="connection-status" class="text-sm bg-indigo-800 px-3 py-1 rounded-full">
+                        <i class="fas fa-circle mr-1"></i>Connected
+                    </span>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Login Modal -->
+    <div id="login-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+        <div class="bg-white rounded-lg shadow-xl p-8 max-w-md w-full mx-4">
+            <div class="text-center mb-6">
+                <i class="fas fa-user-circle text-4xl text-indigo-600 mb-4"></i>
+                <h2 class="text-2xl font-bold text-gray-800">Join Chat Room</h2>
+                <p class="text-gray-600 mt-2">Enter your username to start chatting</p>
+            </div>
+            <form id="login-form" class="space-y-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Username</label>
+                    <input type="text" id="username-input" required
+                           class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                           placeholder="Enter your username" maxlength="20">
+                </div>
+                <button type="submit" 
+                        class="w-full bg-indigo-600 text-white py-3 px-4 rounded-lg hover:bg-indigo-700 transition duration-200 font-medium">
+                    <i class="fas fa-sign-in-alt mr-2"></i>Join Chat
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Main Chat Interface -->
+    <div id="chat-interface" class="hidden">
+        <div class="container mx-auto px-4 py-6">
+            <div class="grid grid-cols-1 lg:grid-cols-4 gap-6">
+                <!-- Users Sidebar -->
+                <div class="lg:col-span-1">
+                    <div class="bg-white rounded-lg shadow-md p-4">
+                        <h3 class="font-semibold text-gray-800 mb-4 flex items-center">
+                            <i class="fas fa-users mr-2 text-indigo-600"></i>
+                            Online Users (<span id="user-count">0</span>)
+                        </h3>
+                        <div id="users-list" class="space-y-2">
+                            <!-- Users will be added here -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Chat Area -->
+                <div class="lg:col-span-3">
+                    <div class="bg-white rounded-lg shadow-md h-full flex flex-col">
+                        <!-- Chat Messages -->
+                        <div id="chat-messages" class="flex-1 overflow-y-auto p-4 chat-container">
+                            <div class="text-center text-gray-500 py-8">
+                                <i class="fas fa-comments text-4xl mb-4"></i>
+                                <p>Welcome to the AI Polite Chat Room!</p>
+                                <p class="text-sm mt-2">Start typing to begin chatting</p>
+                            </div>
+                        </div>
+
+                        <!-- Typing Indicator -->
+                        <div id="typing-indicator" class="hidden px-4 py-2">
+                            <div class="typing-indicator">
+                                <span class="typing-dot"></span>
+                                <span class="typing-dot"></span>
+                                <span class="typing-dot"></span>
+                                <span class="ml-2 text-sm text-gray-600">Someone is typing...</span>
+                            </div>
+                        </div>
+
+                        <!-- Message Input -->
+                        <div class="border-t border-gray-200 p-4">
+                            <form id="message-form" class="flex space-x-2">
+                                <input type="text" id="message-input" 
+                                       class="flex-1 px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                                       placeholder="Type your message..." maxlength="500">
+                                <button type="submit" 
+                                        class="bg-indigo-600 text-white px-6 py-3 rounded-lg hover:bg-indigo-700 transition duration-200">
+                                    <i class="fas fa-paper-plane"></i>
+                                </button>
+                            </form>
+                            <div class="mt-2 text-xs text-gray-500">
+                                <i class="fas fa-info-circle mr-1"></i>
+                                AI will detect and convert hate speech to polite language automatically
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Conversion Options Modal -->
+    <div id="conversion-modal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+        <div class="bg-white rounded-lg shadow-xl p-6 max-w-2xl w-full mx-4 max-h-[80vh] overflow-y-auto">
+            <div class="text-center mb-6">
+                <i class="fas fa-magic text-4xl text-indigo-600 mb-4"></i>
+                <h2 class="text-2xl font-bold text-gray-800">Choose Polite Version</h2>
+                <p class="text-gray-600 mt-2">Select which conversion you prefer for each detected phrase</p>
+            </div>
+            
+            <div id="conversion-options-container" class="space-y-4 mb-6">
+                <!-- Conversion options will be added here -->
+            </div>
+            
+            <div class="flex space-x-3">
+                <button onclick="sendConvertedMessage()" 
+                        class="flex-1 bg-indigo-600 text-white py-3 px-4 rounded-lg hover:bg-indigo-700 transition duration-200 font-medium">
+                    <i class="fas fa-check mr-2"></i>Send Polite Version
+                </button>
+                <button onclick="cancelConversion()" 
+                        class="flex-1 bg-gray-600 text-white py-3 px-4 rounded-lg hover:bg-gray-700 transition duration-200 font-medium">
+                    <i class="fas fa-times mr-2"></i>Cancel
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let socket;
+        let currentUser = '';
+        let typingTimer;
+        let currentConversionData = null;
+        let selectedAlternatives = [];
+
+        // Initialize Socket.io connection
+        function initializeSocket() {
+            socket = io();
+            
+            socket.on('connect', () => {
+                updateConnectionStatus(true);
+            });
+
+            socket.on('disconnect', () => {
+                updateConnectionStatus(false);
+            });
+
+            socket.on('user_list', (users) => {
+                updateUsersList(users);
+            });
+
+            socket.on('receive_message', (data) => {
+                displayMessage(data);
+            });
+
+            socket.on('conversion_options', (data) => {
+                showConversionOptions(data);
+            });
+
+            socket.on('user_typing', (data) => {
+                showTypingIndicator(data.username);
+            });
+        }
+
+        // Update connection status
+        function updateConnectionStatus(connected) {
+            const status = document.getElementById('connection-status');
+            if (connected) {
+                status.innerHTML = '<i class="fas fa-circle mr-1"></i>Connected';
+                status.className = 'text-sm bg-green-600 px-3 py-1 rounded-full';
+            } else {
+                status.innerHTML = '<i class="fas fa-circle mr-1"></i>Disconnected';
+                status.className = 'text-sm bg-red-600 px-3 py-1 rounded-full';
+            }
+        }
+
+        // Login form submission
+        document.getElementById('login-form').addEventListener('submit', (e) => {
+            e.preventDefault();
+            const username = document.getElementById('username-input').value.trim();
+            
+            if (username) {
+                currentUser = username;
+                socket.emit('join', username);
+                document.getElementById('login-modal').classList.add('hidden');
+                document.getElementById('chat-interface').classList.remove('hidden');
+            }
+        });
+
+        // Message form submission
+        document.getElementById('message-form').addEventListener('submit', (e) => {
+            e.preventDefault();
+            const messageInput = document.getElementById('message-input');
+            const message = messageInput.value.trim();
+            
+            if (message) {
+                socket.emit('send_message', message);
+                messageInput.value = '';
+                socket.emit('stop_typing');
+            }
+        });
+
+        // Typing indicator
+        document.getElementById('message-input').addEventListener('input', () => {
+            socket.emit('typing');
+            
+            clearTimeout(typingTimer);
+            typingTimer = setTimeout(() => {
+                socket.emit('stop_typing');
+            }, 1000);
+        });
+
+        // Update users list
+        function updateUsersList(users) {
+            const usersList = document.getElementById('users-list');
+            const userCount = document.getElementById('user-count');
+            
+            userCount.textContent = users.length;
+            usersList.innerHTML = '';
+            
+            users.forEach(user => {
+                const userDiv = document.createElement('div');
+                userDiv.className = 'user-list-item flex items-center p-2 rounded-lg';
+                userDiv.innerHTML = `
+                    <div class="w-2 h-2 bg-green-500 rounded-full mr-2"></div>
+                    <span class="text-sm ${user === currentUser ? 'font-semibold text-indigo-600' : 'text-gray-700'}">
+                        ${user} ${user === currentUser ? '(You)' : ''}
+                    </span>
+                `;
+                usersList.appendChild(userDiv);
+            });
+        }
+
+        // Display message in chat
+        function displayMessage(data) {
+            const messagesContainer = document.getElementById('chat-messages');
+            const messageDiv = document.createElement('div');
+            messageDiv.className = 'message-bubble mb-4';
+            
+            const isCurrentUser = data.user === currentUser;
+            const alignClass = isCurrentUser ? 'text-right' : 'text-left';
+            
+            messageDiv.innerHTML = `
+                <div class="${alignClass}">
+                    <div class="inline-block max-w-xs lg:max-w-md">
+                        <div class="text-xs text-gray-500 mb-1">${data.user} • ${data.time}</div>
+                        ${data.was_converted ? `
+                            
+                            <div class="bg-green-50 border border-green-200 rounded-lg p-3">
+                                <div class="text-xs text-green-600 font-medium mb-1">
+                                    <i class="fas fa-check-circle mr-1"></i>Converted message sent:
+                                </div>
+                                <p class="text-gray-800 font-medium">${data.converted_message}</p>
+                            </div>
+                        ` : `
+                            <div class="bg-white rounded-lg shadow-sm p-3">
+                                <p class="text-gray-800">${data.original_message}</p>
+                            </div>
+                        `}
+                    </div>
+                </div>
+            `;
+            
+            messagesContainer.appendChild(messageDiv);
+            messagesContainer.scrollTop = messagesContainer.scrollHeight;
+        }
+
+        // Show conversion options modal
+        function showConversionOptions(data) {
+            currentConversionData = data;
+            selectedAlternatives = [];
+            
+            const container = document.getElementById('conversion-options-container');
+            container.innerHTML = '';
+            
+            data.sentences.forEach((sentence, index) => {
+                if (data.conversion_options[index]) {
+                    const options = data.conversion_options[index];
+                    const div = document.createElement('div');
+                    div.className = 'mb-4';
+                    div.innerHTML = `
+                        <div class="text-sm font-medium text-gray-700 mb-2">Original: "${sentence}"</div>
+                        <div class="space-y-2">
+                            <div class="conversion-option border-2 border-gray-200 rounded-lg p-3" 
+                                 onclick="selectAlternative(${index}, 0)">
+                                <div class="flex items-center">
+                                    <input type="radio" name="conversion-${index}" value="0" checked class="mr-3">
+                                    <div>
+                                        <div class="text-sm font-medium text-gray-800">Option 1:</div>
+                                        <div class="text-gray-600">${options[0]}</div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="conversion-option border-2 border-gray-200 rounded-lg p-3" 
+                                 onclick="selectAlternative(${index}, 1)">
+                                <div class="flex items-center">
+                                    <input type="radio" name="conversion-${index}" value="1" class="mr-3">
+                                    <div>
+                                        <div class="text-sm font-medium text-gray-800">Option 2:</div>
+                                        <div class="text-gray-600">${options[1]}</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                    container.appendChild(div);
+                    selectedAlternatives.push(options[0]); // Default to first option
+                }
+            });
+            
+            document.getElementById('conversion-modal').classList.remove('hidden');
+        }
+
+        // Select conversion alternative
+        function selectAlternative(sentenceIndex, optionIndex) {
+            selectedAlternatives[sentenceIndex] = currentConversionData.conversion_options[sentenceIndex][optionIndex];
+            
+            // Update radio buttons and visual selection
+            const options = document.querySelectorAll(`input[name="conversion-${sentenceIndex}"]`);
+            const optionDivs = document.querySelectorAll(`.conversion-option:has(input[name="conversion-${sentenceIndex}"])`);
+            
+            options.forEach((option, i) => {
+                option.checked = i === optionIndex;
+            });
+            
+            optionDivs.forEach((div, i) => {
+                if (i === optionIndex) {
+                    div.classList.add('selected');
+                } else {
+                    div.classList.remove('selected');
+                }
+            });
+        }
+
+        // Send converted message
+        function sendConvertedMessage() {
+            if (currentConversionData) {
+                socket.emit('choose_conversion', {
+                    message_id: currentConversionData.message_id,
+                    original_message: currentConversionData.original_message,
+                    chosen_alternatives: selectedAlternatives,
+                    sentences: currentConversionData.sentences
+                });
+                cancelConversion();
+            }
+        }
+
+        // Cancel conversion
+        function cancelConversion() {
+            document.getElementById('conversion-modal').classList.add('hidden');
+            currentConversionData = null;
+            selectedAlternatives = [];
+        }
+
+        // Show typing indicator
+        function showTypingIndicator(username) {
+            if (username !== currentUser) {
+                const indicator = document.getElementById('typing-indicator');
+                indicator.classList.remove('hidden');
+                
+                clearTimeout(window.typingTimeout);
+                window.typingTimeout = setTimeout(() => {
+                    indicator.classList.add('hidden');
+                }, 3000);
+            }
+        }
+
+        // Initialize on page load
+        document.addEventListener('DOMContentLoaded', () => {
+            initializeSocket();
+        });
+    </script>
+</body>
+</html>
