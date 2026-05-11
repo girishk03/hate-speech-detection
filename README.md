@@ -1,52 +1,27 @@
-# Hate Speech Detection Suite
-[![CI](https://github.com/girishk03/hate-speech-detection/actions/workflows/ci.yml/badge.svg)](https://github.com/girishk03/hate-speech-detection/actions/workflows/ci.yml)
-[![Python](https://img.shields.io/badge/Python-3.11%2B-blue.svg)](https://www.python.org/)
-[![Flask](https://img.shields.io/badge/Framework-Flask-black.svg)](https://flask.palletsprojects.com/)
-[![Model](https://img.shields.io/badge/Model-TF--IDF%20%2B%20LinearSVC-success.svg)](#modeling-approach)
-[![License](https://img.shields.io/badge/License-MIT-green.svg)](#license)
+# Hate Speech Detection
 
-Production-style NLP project for detecting toxic/hate speech across two real-world channels:
+A Flask-based NLP project for detecting toxic/hate speech in text across two use cases:
+- YouTube comment classification
+- Chatroom moderation
 
-- **YouTube Comment Intelligence**: batch + interactive comment analysis
-- **Chatroom Moderation**: near real-time toxicity/hate flagging
+## Features
+- TF-IDF + LinearSVC text classification
+- Web interface with Flask
+- SocketIO-based interactive behavior
+- Saved model artifacts (`best_model.pkl`, `vectorizer.pkl`)
 
----
+## Model Performance
+Best model: **SVM (LinearSVC)**  
+Accuracy: **0.7850** (78.50%)  
+Macro F1: **0.78**  
+Weighted F1: **0.78**  
+Test samples: **6424**
 
-## Table of Contents
-- [Highlights](#highlights)
-- [System Architecture](#system-architecture)
-- [Repository Layout](#repository-layout)
-- [Modeling Approach](#modeling-approach)
-- [Results](#results)
-- [Quickstart](#quickstart)
-- [Run Applications](#run-applications)
-- [API/Socket Events (Overview)](#apisocket-events-overview)
-- [Configuration](#configuration)
-- [Troubleshooting](#troubleshooting)
-- [Roadmap](#roadmap)
-- [Contributing](#contributing)
-- [License](#license)
-- [Author](#author)
+## Run (YouTube Module)
+```bash
+cd "Youtube comment classification"
+python app.py
+```
+Open: `http://127.0.0.1:5001`
 
----
-
-## Highlights
-
-- End-to-end hate/toxicity detection workflow
-- TF-IDF + LinearSVC pipeline with persisted artifacts
-- Flask + Flask-SocketIO apps
-- Structured data + model folders for reproducibility
-- GitHub Actions CI integrated
-
----
-
-## System Architecture
-
-```mermaid
-flowchart LR
-    A[Raw Text / YouTube Comments] --> B[Preprocessing]
-    B --> C[TF-IDF Vectorization]
-    C --> D[Classifier: LinearSVC]
-    D --> E[Prediction + Confidence Signals]
-    E --> F1[YouTube Web App]
-    E --> F2[Chatroom Moderation App]
+_Last updated: Tue May 12 00:18:13 IST 2026_
