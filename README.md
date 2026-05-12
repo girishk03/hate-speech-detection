@@ -14,7 +14,7 @@ A Flask-based NLP project for detecting toxic/hate speech in text across two use
 
 | Comment List | Insights Panel |
 |---|---|
-| <img src="docs/screenshots/04-comment-list.png" width="400"> | <img src="docs/screenshots/05-insights-panel.png" width="400"> |
+| <img src="docs/screenshots/04-comment-list.png" width="400"> | <img src="docs/screenshots/05-insights-panel.png" width="250"> |
 
 ### 💬 AI Polite Chat Room
 
