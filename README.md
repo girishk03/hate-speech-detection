@@ -1,4 +1,10 @@
 # Hate Speech Detection
+![CI](https://github.com/girishk03/hate-speech-detection/actions/workflows/ci.yml/badge.svg)
+[![Python](https://img.shields.io/badge/Python-3.11-blue?style=flat&logo=python)](https://python.org)
+[![Flask](https://img.shields.io/badge/Flask-2.3-black?style=flat&logo=flask)](https://flask.palletsprojects.com)
+[![NLP](https://img.shields.io/badge/NLP-TF--IDF%20%2B%20LinearSVC-orange?style=flat)](https://scikit-learn.org)
+[![License](https://img.shields.io/badge/License-MIT-green?style=flat)](LICENSE)
+
 
 A Flask-based NLP project for detecting toxic/hate speech in text across two use cases:
 - YouTube comment classification
@@ -49,5 +55,12 @@ cd "Youtube comment classification"
 python app.py
 ```
 Open: `http://127.0.0.1:5001`
+
+## Run (Chatroom Module)
+```bash
+cd Chatroom
+python app.py
+```
+Open: `http://127.0.0.1:5000`
 
 _Last updated: Tue May 12 00:18:13 IST 2026_
