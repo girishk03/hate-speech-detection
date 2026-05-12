@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Hate Speech Detection</title>
+<style>
+body{margin:0;font-family:Arial,sans-serif;background:#1a1a2e;color:#fff;display:flex;justify-content:center;align-items:center;min-height:100vh;}
+.container{text-align:center;padding:40px;}
+h1{font-size:2.5em;margin-bottom:10px;color:#e94560;}
+p{color:#aaa;margin-bottom:40px;font-size:1.1em;}
+.cards{display:flex;gap:30px;justify-content:center;flex-wrap:wrap;}
+.card{background:#16213e;border-radius:15px;padding:40px;width:280px;text-decoration:none;color:#fff;border:2px solid transparent;transition:all 0.3s;}
+.card:hover{border-color:#e94560;transform:translateY(-5px);}
+.card h2{font-size:1.5em;margin-bottom:10px;}
+.card p{color:#aaa;font-size:0.95em;}
+.badge{display:inline-block;background:#e94560;color:#fff;padding:4px 12px;border-radius:20px;font-size:0.8em;margin-top:15px;}
+</style>
+</head>
+<body>
+<div class="container">
+  <h1>🛡️ Hate Speech Detection</h1>
+  <p>AI-powered toxic content detection — TF-IDF + LinearSVC, 78.5% accuracy</p>
+  <div class="cards">
+    <a href="/youtube" class="card">
+      <h2>📺 YouTube Classifier</h2>
+      <p>Analyze YouTube comments for hate speech, toxicity and sentiment</p>
+      <span class="badge">78.5% Accuracy</span>
+    </a>
+    <a href="/chatroom" class="card">
+      <h2>💬 AI Polite Chatroom</h2>
+      <p>Real-time chat with automatic hate speech detection and polite conversion</p>
+      <span class="badge">Live SocketIO</span>
+    </a>
+  </div>
+</div>
+</body>
+</html>
