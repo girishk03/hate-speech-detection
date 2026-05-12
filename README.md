@@ -8,19 +8,25 @@ A Flask-based NLP project for detecting toxic/hate speech in text across two use
 
 ### 🎯 YouTube Comment Classification
 
-| Home | Analysis Results |
-|---|---|
-| <img src="docs/screenshots/01-youtube-home.png" width="400"> | <img src="docs/screenshots/02-youtube-results.png" width="400"> |
+![Home](docs/screenshots/01-youtube-home.png)
+*YouTube comment analysis home — Sentiment Analysis · Toxicity Scoring · Keyword Highlighting*
 
-| Comment List | Insights Panel |
-|---|---|
-| <img src="docs/screenshots/04-comment-list.png" width="400"> | <img src="docs/screenshots/05-insights-panel.png" width="250"> |
+![Results](docs/screenshots/02-youtube-results.png)
+*Analysis results — 50 comments, 24 hate speech detected, 22.6% avg toxicity score*
+
+![Comment List](docs/screenshots/04-comment-list.png)
+*Comment list with POSITIVE/NEGATIVE/NEUTRAL labels and confidence scores*
 
 ### 💬 AI Polite Chat Room
 
-| Chatroom | Polite Conversion | Converted Message |
-|---|---|---|
-| <img src="docs/screenshots/07-chatroom-home.png" width="280"> | <img src="docs/screenshots/09-polite-conversion.png" width="280"> | <img src="docs/screenshots/08-chatroom-result.png" width="280"> |
+![Chatroom](docs/screenshots/07-chatroom-home.png)
+*Real-time AI moderated chatroom*
+
+![Polite Conversion](docs/screenshots/09-polite-conversion.png)
+*Polite version chooser — converts "i hate you" to "I dislike you"*
+
+![Converted Message](docs/screenshots/08-chatroom-result.png)
+*Message converted and sent as polite version*
 
 ---
 
