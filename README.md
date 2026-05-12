@@ -1,4 +1,7 @@
 # Hate Speech Detection
+
+**[🛡️ Live Demo](https://hate-speech-detection-zqjy.onrender.com)** — YouTube Classifier + AI Polite Chatroom *(first load ~30s)*
+
 ![CI](https://github.com/girishk03/hate-speech-detection/actions/workflows/ci.yml/badge.svg)
 [![Python](https://img.shields.io/badge/Python-3.11-blue?style=flat&logo=python)](https://python.org)
 [![Flask](https://img.shields.io/badge/Flask-2.3-black?style=flat&logo=flask)](https://flask.palletsprojects.com)
