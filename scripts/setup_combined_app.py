@@ -14,8 +14,6 @@ TARGET_DIR = ROOT / "combined" / "models"
 ARTIFACTS = ("best_model.pkl", "vectorizer.pkl")
 NLTK_RESOURCES = {
     "vader_lexicon": "sentiment/vader_lexicon.zip",
-    "punkt": "tokenizers/punkt",
-    "punkt_tab": "tokenizers/punkt_tab",
 }
 
 

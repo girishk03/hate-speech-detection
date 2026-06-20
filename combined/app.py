@@ -4,7 +4,6 @@ import joblib, os, re, nltk, time, uuid, threading, requests
 from urllib.parse import urlparse, parse_qs
 from datetime import datetime
 from nltk.sentiment import SentimentIntensityAnalyzer
-from nltk.tokenize import sent_tokenize
 import random
 
 app = Flask(__name__)
@@ -14,8 +13,6 @@ socketio = SocketIO(app, cors_allowed_origins='*', async_mode='threading')
 # Download NLTK data when setup has not already installed it
 NLTK_RESOURCES = {
     'vader_lexicon': 'sentiment/vader_lexicon.zip',
-    'punkt': 'tokenizers/punkt',
-    'punkt_tab': 'tokenizers/punkt_tab',
 }
 for package, resource_path in NLTK_RESOURCES.items():
     try:
