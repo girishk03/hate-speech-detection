@@ -29,7 +29,7 @@ Online communities need scalable ways to prioritize potentially harmful content 
 
 [Open the combined Flask application](https://hate-speech-detection-zqjy.onrender.com)
 
-The link is the deployment URL recorded by this repository. Availability is not guaranteed; free-tier services may sleep, restart, or take time to respond.
+The link is the deployment URL recorded by this repository. The combined app is experimental and requires model artifacts under `combined/models/` for ML predictions; without them, the interface can load but classification falls back to `UNKNOWN`. Availability is not guaranteed, and free-tier services may sleep, restart, or take time to respond.
 
 ## Screenshots
 
@@ -53,7 +53,7 @@ The values visible in screenshots describe that captured run only; they are not 
 
 ## Architecture
 
-The YouTube classifier and chatroom share a Flask interface but use different moderation paths. The classifier uses the saved ML pipeline; the chatroom uses VADER sentiment and phrase substitutions.
+The standalone YouTube classifier uses the saved ML pipeline. The experimental combined Flask app can use the same pipeline only after the artifacts are placed under `combined/models/`; the chatroom uses VADER sentiment and phrase substitutions.
 
 ```mermaid
 flowchart LR
@@ -78,7 +78,7 @@ hate-speech-detection/
 ├── Youtube comment classification/  # Training, inference, dataset, and standalone UI
 │   ├── Datasets/                     # CSV data used by training scripts
 │   └── models/                       # Saved vectorizer and classifier artifacts
-├── combined/                         # Combined deployable Flask application
+├── combined/                         # Experimental combined Flask application
 ├── data/                             # Additional repository data assets
 ├── docs/screenshots/                 # README screenshots
 ├── LICENSE                           # MIT license
@@ -160,10 +160,13 @@ python3 -m venv .venv
 source .venv/bin/activate
 python -m pip install --upgrade pip
 pip install -r combined/requirements.txt
+mkdir -p combined/models
+cp "Youtube comment classification/models/best_model.pkl" combined/models/
+cp "Youtube comment classification/models/vectorizer.pkl" combined/models/
 python combined/app.py
 ```
 
-Open `http://127.0.0.1:5000`. The combined app exposes the YouTube interface at `/youtube` and chatroom at `/chatroom`.
+Open `http://127.0.0.1:5000`. The combined app exposes the YouTube interface at `/youtube` and chatroom at `/chatroom`. The copy commands are required because `combined/app.py` loads `combined/models/best_model.pkl` and `combined/models/vectorizer.pkl`, while the repository stores the artifacts only in the standalone classifier directory.
 
 On Windows PowerShell, activate the environment with `.venv\Scripts\Activate.ps1`.
 
@@ -197,7 +200,7 @@ cd Chatroom
 python app.py
 ```
 
-Open `http://127.0.0.1:5000`.
+Open [http://localhost:5002](http://localhost:5002/).
 
 ## Testing
 
