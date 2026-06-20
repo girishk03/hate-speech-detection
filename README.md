@@ -29,7 +29,7 @@ Online communities need scalable ways to prioritize potentially harmful content 
 
 [Open the combined Flask application](https://hate-speech-detection-zqjy.onrender.com)
 
-The link is the deployment URL recorded by this repository. The combined app is experimental and requires model artifacts under `combined/models/` for ML predictions; without them, the interface can load but classification falls back to `UNKNOWN`. Availability is not guaranteed, and free-tier services may sleep, restart, or take time to respond.
+The link is the deployment URL recorded by this repository. The combined app uses the same tracked classifier artifacts as the standalone module; `scripts/setup_combined_app.py` places and validates them before startup. Availability is not guaranteed, and free-tier services may sleep, restart, or take time to respond.
 
 ## Screenshots
 
@@ -53,7 +53,7 @@ The values visible in screenshots describe that captured run only; they are not 
 
 ## Architecture
 
-The standalone YouTube classifier uses the saved ML pipeline. The experimental combined Flask app can use the same pipeline only after the artifacts are placed under `combined/models/`; the chatroom uses VADER sentiment and phrase substitutions.
+The standalone and combined YouTube interfaces use the saved ML pipeline. The setup script packages the tracked artifacts into the location expected by the combined Flask app; the chatroom uses VADER sentiment and phrase substitutions.
 
 ```mermaid
 flowchart LR
@@ -73,14 +73,17 @@ flowchart LR
 
 ```text
 hate-speech-detection/
-├── .github/workflows/ci.yml          # GitHub Actions import smoke checks
+├── .github/workflows/ci.yml          # GitHub Actions pytest workflow
 ├── Chatroom/                         # Standalone Socket.IO polite-chat application
 ├── Youtube comment classification/  # Training, inference, dataset, and standalone UI
 │   ├── Datasets/                     # CSV data used by training scripts
 │   └── models/                       # Saved vectorizer and classifier artifacts
-├── combined/                         # Experimental combined Flask application
+├── combined/                         # Combined Flask application
 ├── data/                             # Additional repository data assets
-├── docs/screenshots/                 # README screenshots
+├── docs/                             # Provenance notes and screenshots
+├── scripts/setup_combined_app.py     # Deterministic model-artifact setup
+├── tests/                            # Automated pytest suite
+├── pytest.ini                        # Pytest configuration
 ├── LICENSE                           # MIT license
 └── README.md
 ```
@@ -100,7 +103,11 @@ The training script reads `Youtube comment classification/Datasets/ytfinal.csv`.
 | Test samples | 6,424 | Stratified 20% split |
 | Split seed | 42 | Set in `model.py` |
 
-The repository also contains `ytdata.csv` and an augmentation script using WordNet substitutions. However, it does not document the original external dataset source, license, or a reproducible provenance chain from `ytdata.csv` to `ytfinal.csv`. Verify those details before redistributing the data or using it in production.
+The repository also contains `ytdata.csv` and an augmentation script using WordNet substitutions. The original source and license for both training CSVs remain unverified; the repository does not establish a reproducible lineage between them.
+
+## Dataset Provenance
+
+[`docs/dataset_provenance.md`](docs/dataset_provenance.md) records verified row counts, class distributions, preprocessing, file hashes, VADER licensing and citation details, runtime YouTube data considerations, and every unresolved provenance gap. The project MIT license does not relicense third-party or unverified data.
 
 ## Preprocessing
 
@@ -160,13 +167,11 @@ python3 -m venv .venv
 source .venv/bin/activate
 python -m pip install --upgrade pip
 pip install -r combined/requirements.txt
-mkdir -p combined/models
-cp "Youtube comment classification/models/best_model.pkl" combined/models/
-cp "Youtube comment classification/models/vectorizer.pkl" combined/models/
+python scripts/setup_combined_app.py
 python combined/app.py
 ```
 
-Open `http://127.0.0.1:5000`. The combined app exposes the YouTube interface at `/youtube` and chatroom at `/chatroom`. The copy commands are required because `combined/app.py` loads `combined/models/best_model.pkl` and `combined/models/vectorizer.pkl`, while the repository stores the artifacts only in the standalone classifier directory.
+Open `http://127.0.0.1:5000`. The combined app exposes the YouTube interface at `/youtube` and chatroom at `/chatroom`. The setup script copies both tracked Joblib artifacts to `combined/models/`, validates their inference interfaces, and installs the required NLTK data resources.
 
 On Windows PowerShell, activate the environment with `.venv\Scripts\Activate.ps1`.
 
@@ -204,22 +209,21 @@ Open [http://localhost:5002](http://localhost:5002/).
 
 ## Testing
 
-The repository does not currently contain a pytest test suite. `Youtube comment classification/tmp_test_comments.py` is an exploratory script, not an automated test module, and should not be presented as test coverage.
-
-The existing CI performs application import smoke checks. Run equivalent checks locally after installing the relevant requirements:
+The pytest suite contains 13 tests covering preprocessing, saved-model inference, batch prediction, Flask routes, accepted and invalid requests, and chatroom moderation.
 
 ```bash
-(cd "Youtube comment classification" && python -c "import app; print('YouTube app import OK')")
-(cd Chatroom && python -c "import app; print('Chatroom app import OK')")
+pip install -r requirements-dev.txt
+python scripts/setup_combined_app.py
+pytest
 ```
 
-Recommended future tests include `tests/test_preprocessing.py`, `tests/test_model_inference.py`, `tests/test_chatroom_moderation.py`, and `tests/test_routes.py`.
+These tests validate existing behavior and artifact compatibility; they do not retrain the model or recalculate the reported evaluation metrics.
 
 ## CI/CD
 
-`.github/workflows/ci.yml` runs on pushes and pull requests targeting `main` with Python 3.11. It installs each standalone module's dependencies and checks that both Flask applications import successfully.
+`.github/workflows/ci.yml` runs on pushes and pull requests targeting `main` with Python 3.11. It installs development dependencies, prepares the combined-app artifacts, and fails when pytest fails.
 
-This is smoke validation only: the workflow does not run pytest, retrain the model, validate metric thresholds, or deploy the application. The Render configuration in `combined/` provides the deployment entry point, but deployment automation is not defined in this repository.
+The workflow does not retrain the model, enforce metric thresholds, or deploy the application. The Render configuration in `combined/` provides the deployment entry point, but deployment automation is not defined in this repository.
 
 ## Limitations
 
@@ -228,7 +232,7 @@ This is smoke validation only: the workflow does not run pytest, retrain the mod
 - Sentiment labels are only indirect moderation signals and can produce false positives or false negatives.
 - LinearSVC decision scores are not calibrated probabilities; confidence-like UI values should not be interpreted as probabilities without calibration.
 - Keyword and phrase substitution can miss context or produce awkward rewrites.
-- Dataset origin and demographic representation are not documented, limiting bias analysis.
+- Training-dataset origin, license, and demographic representation remain unverified, limiting redistribution and bias analysis.
 - The system is not suitable as the final moderation authority without human review and an appeals process.
 
 ## Ethics and Responsible Use
@@ -239,14 +243,14 @@ Training data can encode cultural, demographic, and annotation bias. Evaluate th
 
 ## Future Improvements
 
-- Document and version the dataset source, license, and transformation lineage.
+- Obtain and version authoritative source, license, and transformation records for both training CSVs.
 - Replace sentiment-style labels with a clearly defined moderation taxonomy.
-- Add pytest coverage for preprocessing, inference, routes, and Socket.IO events.
+- Expand pytest coverage to asynchronous jobs, external-fetch failures, and Socket.IO event flows.
 - Calibrate classifier scores and report per-class confusion matrices.
 - Evaluate code-mixed and multilingual language performance.
 - Add threshold configuration, moderator feedback, and audit logging.
 - Rename the spaced module directory in a coordinated compatibility change.
-- Make dependency installation deterministic and remove permissive CI fallbacks.
+- Split runtime and development dependencies into locked, reproducible environments.
 
 ## License
 

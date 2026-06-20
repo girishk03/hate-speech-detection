@@ -2,12 +2,12 @@ name: CI
 
 on:
   push:
-    branches: [ "main" ]
+    branches: ["main"]
   pull_request:
-    branches: [ "main" ]
+    branches: ["main"]
 
 jobs:
-  smoke-test:
+  test:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -15,25 +15,15 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.11"
+          cache: pip
 
-      - name: Install deps (YouTube module)
-        working-directory: Youtube comment classification
+      - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install -r requirements.txt || true
-          pip install flask flask-socketio python-socketio eventlet joblib
+          pip install -r requirements-dev.txt
 
-      - name: Import test (YouTube module)
-        working-directory: Youtube comment classification
-        run: python -c "import app; print('YouTube app import OK')"
+      - name: Prepare combined app artifacts
+        run: python scripts/setup_combined_app.py
 
-      - name: Install deps (Chatroom)
-        working-directory: Chatroom
-        run: |
-          python -m pip install --upgrade pip
-          pip install -r requirements.txt || true
-          pip install flask flask-socketio python-socketio eventlet
-
-      - name: Import test (Chatroom)
-        working-directory: Chatroom
-        run: python -c "import app; print('Chatroom app import OK')"
+      - name: Run tests
+        run: pytest

@@ -23,6 +23,7 @@ logs/
 *.temp
 *.pkl.tmp
 *.joblib.tmp
+combined/models/*.pkl
 
 # Editors and operating systems
 .vscode/
