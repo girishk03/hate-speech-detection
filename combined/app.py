@@ -11,12 +11,17 @@ app = Flask(__name__)
 app.config['SECRET_KEY'] = 'combined-secret-key'
 socketio = SocketIO(app, cors_allowed_origins='*', async_mode='threading')
 
-# Download NLTK data
-for resource in ['vader_lexicon', 'punkt', 'punkt_tab']:
+# Download NLTK data when setup has not already installed it
+NLTK_RESOURCES = {
+    'vader_lexicon': 'sentiment/vader_lexicon.zip',
+    'punkt': 'tokenizers/punkt',
+    'punkt_tab': 'tokenizers/punkt_tab',
+}
+for package, resource_path in NLTK_RESOURCES.items():
     try:
-        nltk.data.find(f'tokenizers/{resource}' if resource.startswith('punkt') else f'sentiment/{resource}')
+        nltk.data.find(resource_path)
     except LookupError:
-        nltk.download(resource, quiet=True)
+        nltk.download(package, quiet=True)
 
 # Load YouTube model
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -59,8 +64,11 @@ def classify_text(text):
 
 @app.route('/analyze', methods=['POST'])
 def analyze():
-    data = request.get_json()
-    url = data.get('url', '')
+    data = request.get_json(silent=True) or {}
+    url = str(data.get('url') or '').strip()
+    if not url:
+        return jsonify({'success': False, 'error': 'A YouTube URL is required'}), 400
+
     job_id = str(uuid.uuid4())
     with analysis_jobs_lock:
         analysis_jobs[job_id] = {'status': 'processing', 'results': [], 'progress': 0}
@@ -135,4 +143,9 @@ def on_connect():
     emit('status', {'msg': 'Connected'})
 
 if __name__ == '__main__':
-    socketio.run(app, host='0.0.0.0', port=int(os.environ.get('PORT', 5000)))
+    socketio.run(
+        app,
+        host='0.0.0.0',
+        port=int(os.environ.get('PORT', 5000)),
+        allow_unsafe_werkzeug=True,
+    )
